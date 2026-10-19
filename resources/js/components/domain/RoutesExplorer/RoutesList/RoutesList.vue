@@ -2,13 +2,15 @@
 /**
  * @component RoutesList
  * @description A list of grouped route resources and their endpoints.
+ *              Builds a nested folder tree from the flat resource paths so
+ *              resources like "creator/auth/password" render as nested
+ *              folders (Postman-style), rendered recursively by
+ *              RoutesResourceGroup.
  */
-import RoutesListItem from '@/components/domain/RoutesExplorer/RoutesList/RoutesListItem.vue';
-import RoutesResource from '@/components/domain/RoutesExplorer/RoutesResourceGroup.vue';
+import RoutesResourceGroup from '@/components/domain/RoutesExplorer/RoutesResourceGroup.vue';
 import { useShowingSearchResults } from '@/components/domain/RoutesExplorer/showingSearchResults';
-import { useExplorerVisibility } from '@/composables/ui/useExplorerVisibility';
-import { type RouteDefinition, type RoutesGroup } from '@/interfaces/routes/routes';
-import { useRequestStore } from '@/stores';
+import { type RoutesGroup } from '@/interfaces/routes/routes';
+import { buildResourceTree } from '@/utils/routes/resourceTree';
 import { computed } from 'vue';
 
 /*
@@ -23,68 +25,24 @@ export interface RoutesListProps {
  * Component Setup.
  */
 
-defineProps<RoutesListProps>();
-
-/*
- * Stores & Dependencies.
- */
-
-const requestStore = useRequestStore();
-const { isExplorerDrawerOpen } = useExplorerVisibility();
+const props = defineProps<RoutesListProps>();
 
 /*
  * Computed & Methods.
  */
 
-const pendingRequestData = computed(() => requestStore.pendingRequestData);
-
-const isRouteActive = (route: RouteDefinition) => {
-    if (!route) {
-        return false;
-    }
-    if (!pendingRequestData.value) {
-        return false;
-    }
-
-    return (
-        route.endpoint === pendingRequestData.value.endpoint &&
-        route.method === pendingRequestData.value.method
-    );
-};
-
-const setPendingRequest = (route: RouteDefinition, resourceGroup: RoutesGroup) => {
-    if (!route || !resourceGroup) {
-        return;
-    }
-
-    // Get all routes with the same endpoint (different HTTP methods)
-    const availableRoutesForEndpoint = resourceGroup.routes.filter(
-        (routeInGroup: RouteDefinition) => routeInGroup.endpoint === route.endpoint,
-    );
-
-    requestStore.initializeRequest(route, availableRoutesForEndpoint);
-    isExplorerDrawerOpen.value = false;
-};
+const resourceTree = computed(() => buildResourceTree(props.routes));
 
 const showingSearchResults = useShowingSearchResults();
 </script>
 
 <template>
     <template v-if="routes && routes.length">
-        <RoutesResource
-            v-for="resourceGroup in routes"
-            :key="resourceGroup.resource"
-            :resource="resourceGroup.resource"
-        >
-            <RoutesListItem
-                v-for="route in resourceGroup.routes"
-                :key="route.endpoint + '-' + route.method"
-                :route="route"
-                :resource="resourceGroup.resource"
-                :on-click="() => setPendingRequest(route, resourceGroup)"
-                :is-active="isRouteActive(route)"
-            />
-        </RoutesResource>
+        <RoutesResourceGroup
+            v-for="node in resourceTree"
+            :key="node.fullPath"
+            :node="node"
+        />
     </template>
     <template v-else-if="!showingSearchResults">
         <div class="px-base">
