@@ -2,9 +2,7 @@
 /**
  * @component RoutesResourceGroup
  * @description A collapsible sidebar folder for a route resource. Renders
- *              recursively: a node like "creator/auth/password" becomes a
- *              folder tree (creator → auth → password) with routes on the
- *              folder they belong to.
+ *              its nested folders recursively and the routes that belong to it.
  */
 import { AppCollapsible } from '@/components/base/collapsible';
 import AppIcon from '@/components/base/icons/AppIcon.vue';
@@ -12,9 +10,8 @@ import ExplorerRow from '@/components/domain/RoutesExplorer/ExplorerRow.vue';
 import RoutesListItem from '@/components/domain/RoutesExplorer/RoutesList/RoutesListItem.vue';
 import { useShowingSearchResults } from '@/components/domain/RoutesExplorer/showingSearchResults';
 import { useExplorerVisibility } from '@/composables/ui/useExplorerVisibility';
-import type { RouteDefinition } from '@/interfaces/routes/routes';
+import type { RouteDefinition, RoutesFolder } from '@/interfaces/routes/routes';
 import { useRequestStore } from '@/stores';
-import type { ResourceTreeNode } from '@/utils/routes/resourceTree';
 import { singletonPersistenceKey } from '@/utils/stores/uniquePersistenceKey';
 import { useStorage } from '@vueuse/core';
 import { computed } from 'vue';
@@ -24,8 +21,7 @@ import { computed } from 'vue';
  */
 
 export interface RoutesResourceGroupProps {
-    /** The folder node: name, full resource path, routes and children. */
-    node: ResourceTreeNode;
+    folder: RoutesFolder;
 }
 
 /*
@@ -46,7 +42,7 @@ const { isExplorerDrawerOpen } = useExplorerVisibility();
  */
 
 const isOpen = useStorage(
-    singletonPersistenceKey(`routes-explorer-resource-${props.node.fullPath}-expanded`),
+    singletonPersistenceKey(`routes-explorer-resource-${props.folder.path}-expanded`),
     false,
 );
 
@@ -55,6 +51,9 @@ const showingSearchResults = useShowingSearchResults();
 /*
  * Computed & Methods.
  */
+
+// Search results force every folder open.
+const isExpanded = computed(() => showingSearchResults.value || isOpen.value);
 
 const pendingRequestData = computed(() => requestStore.pendingRequestData);
 
@@ -78,7 +77,7 @@ const setPendingRequest = (route: RouteDefinition) => {
     }
 
     // Get all routes with the same endpoint (different HTTP methods).
-    const availableRoutesForEndpoint = props.node.routes.filter(
+    const availableRoutesForEndpoint = props.folder.routes.filter(
         (routeInGroup: RouteDefinition) => routeInGroup.endpoint === route.endpoint,
     );
 
@@ -90,19 +89,19 @@ const setPendingRequest = (route: RouteDefinition) => {
 <template>
     <li>
         <AppCollapsible
-            class="group/collapsible"
             :default-open="isOpen"
-            :open="showingSearchResults ? true : isOpen"
+            :open="isExpanded"
             @update:open="isOpen = $event"
         >
             <ExplorerRow>
                 <AppIcon
                     name="i-hugeicons-arrow-right-01"
-                    class="-mx-tight shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90"
+                    class="-mx-tight shrink-0 transition-transform"
+                    :class="{ 'rotate-90': isExpanded }"
                 />
                 <AppIcon name="i-hugeicons-folder-01" class="shrink-0" />
                 <span class="max-w-45 truncate sm:max-w-55 md:max-w-65 lg:max-w-75">
-                    {{ node.name }}
+                    {{ folder.name }}
                 </span>
             </ExplorerRow>
             <template #content>
@@ -111,16 +110,16 @@ const setPendingRequest = (route: RouteDefinition) => {
                 >
                     <!-- Nested child folders (recursive). -->
                     <RoutesResourceGroup
-                        v-for="child in node.children"
-                        :key="child.fullPath"
-                        :node="child"
+                        v-for="child in folder.children"
+                        :key="child.path"
+                        :folder="child"
                     />
                     <!-- Routes directly in this folder. -->
                     <RoutesListItem
-                        v-for="route in node.routes"
+                        v-for="route in folder.routes"
                         :key="route.endpoint + '-' + route.method"
                         :route="route"
-                        :resource="node.fullPath"
+                        :resource="folder.path"
                         :on-click="() => setPendingRequest(route)"
                         :is-active="isRouteActive(route)"
                     />

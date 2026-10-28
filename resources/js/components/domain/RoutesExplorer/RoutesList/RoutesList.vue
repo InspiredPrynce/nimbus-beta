@@ -1,37 +1,30 @@
 <script setup lang="ts">
 /**
  * @component RoutesList
- * @description A list of grouped route resources and their endpoints.
- *              Builds a nested folder tree from the flat resource paths so
- *              resources like "creator/auth/password" render as nested
- *              folders (Postman-style), rendered recursively by
- *              RoutesResourceGroup.
+ * @description A list of route folders and their endpoints.
+ *              Folders render recursively through RoutesResourceGroup.
  */
 import RoutesResourceGroup from '@/components/domain/RoutesExplorer/RoutesResourceGroup.vue';
 import { useShowingSearchResults } from '@/components/domain/RoutesExplorer/showingSearchResults';
-import { type RoutesGroup } from '@/interfaces/routes/routes';
-import { buildResourceTree } from '@/utils/routes/resourceTree';
-import { computed } from 'vue';
+import { type RoutesFolder } from '@/interfaces/routes/routes';
 
 /*
  * Types & Interfaces.
  */
 
 export interface RoutesListProps {
-    routes: RoutesGroup[];
+    routes: RoutesFolder[];
 }
 
 /*
  * Component Setup.
  */
 
-const props = defineProps<RoutesListProps>();
+defineProps<RoutesListProps>();
 
 /*
- * Computed & Methods.
+ * State.
  */
-
-const resourceTree = computed(() => buildResourceTree(props.routes));
 
 const showingSearchResults = useShowingSearchResults();
 </script>
@@ -39,9 +32,9 @@ const showingSearchResults = useShowingSearchResults();
 <template>
     <template v-if="routes && routes.length">
         <RoutesResourceGroup
-            v-for="node in resourceTree"
-            :key="node.fullPath"
-            :node="node"
+            v-for="folder in routes"
+            :key="folder.path"
+            :folder="folder"
         />
     </template>
     <template v-else-if="!showingSearchResults">
