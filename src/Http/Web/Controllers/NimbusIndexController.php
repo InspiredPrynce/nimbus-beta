@@ -46,7 +46,7 @@ class NimbusIndexController
 
             $viewData = [
                 'routes' => $routes->toFrontendArray(
-                    shouldNestFolders: $config->boolean('nimbus.nested_folders', false),
+                    shouldNestFolders: (bool) $config->get('nimbus.nested_folders', false),
                 ),
                 'headers' => $buildGlobalHeadersAction->execute(),
                 'currentUser' => $buildCurrentUserAction->execute(),
