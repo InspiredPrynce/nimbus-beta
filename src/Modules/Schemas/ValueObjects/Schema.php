@@ -7,7 +7,6 @@ namespace Sunchayn\Nimbus\Modules\Schemas\ValueObjects;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use Sunchayn\Nimbus\Modules\Schemas\Contracts\SchemaPropertyInterface;
-use Sunchayn\Nimbus\Modules\Schemas\SchemaConfig;
 
 /**
  * @phpstan-type SchemaShape array{
@@ -15,7 +14,7 @@ use Sunchayn\Nimbus\Modules\Schemas\SchemaConfig;
  *      type: 'object',
  *      properties: array<string, array<string, mixed>>,
  *      required: string[],
- *      additionalProperties: bool,
+ *      additionalProperties: false,
  *  }
  *
  * @implements Arrayable<string, mixed>
@@ -119,7 +118,7 @@ class Schema implements Arrayable
             'type' => 'object',
             'properties' => $this->toPropertiesArray(),
             'required' => $this->getRequiredProperties(),
-            'additionalProperties' => SchemaConfig::allowsAdditionalProperties(),
+            'additionalProperties' => false,
         ];
     }
 }

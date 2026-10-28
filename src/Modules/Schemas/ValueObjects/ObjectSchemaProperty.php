@@ -6,7 +6,6 @@ namespace Sunchayn\Nimbus\Modules\Schemas\ValueObjects;
 
 use Sunchayn\Nimbus\Modules\Schemas\Contracts\SchemaPropertyInterface;
 use Sunchayn\Nimbus\Modules\Schemas\Enums\SchemaPropertyType;
-use Sunchayn\Nimbus\Modules\Schemas\SchemaConfig;
 
 /**
  * Schema property for object types.
@@ -68,7 +67,7 @@ class ObjectSchemaProperty implements SchemaPropertyInterface
             $result['required'] = $this->schema->getRequiredProperties();
         }
 
-        $result['additionalProperties'] = $this->additionalProperties || SchemaConfig::allowsAdditionalProperties();
+        $result['additionalProperties'] = $this->additionalProperties;
 
         return $result;
     }
